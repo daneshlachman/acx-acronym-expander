@@ -26,7 +26,7 @@ class FactoryRandom(OutExpanderFactory):
         pass
 
     def perform_search_query(AcronymForSearchQuery):
-        subscription_key = "77b60d329a8e42879ea9bb112e162468"
+        subscription_key = ""
         endpoint = "https://api.bing.microsoft.com/v7.0/search" 
 
         # Construct a request
