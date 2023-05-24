@@ -1,0 +1,14 @@
+[
+
+    {
+        "acronym": "PDF",
+        "concetenated_snippets": "insert concetenated_snippets from search query here",
+        "concetenated_titles": "insert concetenated_titles from the search query here"
+    },
+    {
+        "acronym": "OTHER_ACRONYM",
+        "concetenated_snippets": "insert concetenated_snippets from search query here",
+        "concetenated_titles": "insert concetenated_titles from the search query here"
+    }
+
+]
