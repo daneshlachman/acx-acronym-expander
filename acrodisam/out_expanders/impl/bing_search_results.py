@@ -96,9 +96,6 @@ class FactorySearchEngine(OutExpanderFactory):
         return _ExpanderSearchEngine(search_results_jsonfile, train_data_manager)
 
 
-# HETZELFDE DOEN ALS BIJ RANDOM, ALLEEN EXTRA DICT MAKEN VOOR ALLEEN DE ARTICLE_IDS OF TXT VAN DE ARTICLE_IDS (FF KIJKEN
-# WAT HANDIG IS)
-
 class _ExpanderSearchEngine(OutExpander):
     def __init__(self, cached_contexts: dict, trainer):
         self.cached_contexts = cached_contexts
@@ -107,11 +104,11 @@ class _ExpanderSearchEngine(OutExpander):
         self.bing_factory = FactorySearchEngine()
 
     def perform_search_query(self, AcronymForSearchQuery, context):
-        subscription_key = "77b60d329a8e42879ea9bb112e162468"
+        subscription_key = "59dbcd200c134837adfdad83ead297cf"
         endpoint = "https://api.bing.microsoft.com/v7.0/search" 
 
         # Construct a request
-        query = 'What does the abbreviation ' + AcronymForSearchQuery + ' mean in the context of ' + context
+        query = 'What does the abbreviation ' + AcronymForSearchQuery + ' mean in the context of ' + context + '?'
         print(query)
         # pdb.set_trace()
         mkt = 'en-US'
@@ -145,34 +142,41 @@ class _ExpanderSearchEngine(OutExpander):
     
     def process_article(self, out_expander_input: OutExpanderArticleInput):
         predicted_expansions = []
+        article_id =  out_expander_input.article.article_id
+        article_text = out_expander_input.article.get_raw_text()
 
-        with open(cache_snippet_filepath) as filepath:
-            search_results_jsonfile = json.load(filepath)
 
-        # pdb.set_trace()
         # Receive list of acronyms which should be expanded
         # loop through this list
         # for each acronym get its context and apply in-expander on context to find acronym
         # calculate some sort of probality
         # return list expansions with probabilities
-
+        
         for acronym in out_expander_input.acronyms_list:
-            # pdb.set_trace()
-            list_of_cached_acronyms = list(self.cached_contexts.keys())
-            if acronym not in list_of_cached_acronyms:
-                # if out_expander_input.artile.article_id()
-                article_text = out_expander_input.article.get_raw_text()
-                context = self.yake_as_context(acronym, article_text)
-                # search_results =  self.perform_search_query(acronym, context)
-                # pdb.set_trace()
-                # search_results_jsonfile[acronym] = search_results
-                # with open(cache_snippet_filepath,  'w') as f:
-                #     f.write(json.dumps(search_results_jsonfile, sort_keys=True, indent=4, separators=(',',  ': ')))
-                # list_of_cached_acronyms.append(acronym)
-                # pdb.set_trace()
-                # search_results =  self.bing_factory.perform_search_query()
+            ## reopen file because intermediate change has potentially occured
+            with open(cache_snippet_filepath) as filepath:
+                search_results_jsonfile = json.load(filepath)
 
-            # pdb.set_trace()
+            if article_id not in list(search_results_jsonfile.keys()):
+                context = self.yake_as_context(acronym, article_text)
+                bing_search_results =  self.perform_search_query(acronym, context)
+                search_results_jsonfile[article_id] = {acronym: bing_search_results}
+                print('Acronym added: ' + acronym + ' on article ' + article_id)
+                with open(cache_snippet_filepath,  'w') as f:
+                    f.write(json.dumps(search_results_jsonfile, sort_keys=True, indent=4, separators=(',',  ': ')))
+
+            elif article_id in list(search_results_jsonfile.keys()):
+
+                pdb.set_trace()
+                if acronym not in list(search_results_jsonfile[article_id].keys()):
+                    # pdb.set_trace()
+                    context = self.yake_as_context(acronym, article_text)
+                    bing_search_results = self.perform_search_query(acronym, context)
+                    # pdb.set_trace()
+                    search_results_jsonfile[article_id][acronym] = bing_search_results
+                    print('Acronym added: ' + acronym + ' on article ' + article_id)
+                    with open(cache_snippet_filepath,  'w') as f:
+                        f.write(json.dumps(search_results_jsonfile, sort_keys=True, indent=4, separators=(',',  ': ')))
 
         # for acronym in out_expander_input.acronyms_list:
         #     expansions = self.acronym_expansion[acronym]
