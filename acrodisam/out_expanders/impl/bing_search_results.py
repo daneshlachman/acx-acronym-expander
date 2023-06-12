@@ -24,7 +24,7 @@ from AcroExpExtractors.AcroExpExtractor_MadDog import (
     AcroExpExtractor_MadDog,)
 
 
-cache_snippet_filepath = 'acrodisam/out_expanders/impl/ScienceWISE_search_results.json'
+cache_snippet_filepath = 'acrodisam/out_expanders/impl/SDU_search_results.json'
 
 class FactorySearchEngine(OutExpanderFactory):
     def __init__(self, *args, **kwargs):
@@ -67,7 +67,7 @@ class _ExpanderSearchEngine(OutExpander):
     def __init__(self, in_expander):
         self.expander =  in_expander[0]
         self.sh_expander =  AcroExpExtractor_Schwartz_Hearst()
-        self.acx_in_expander = AcroExpExtractor_Yet_Another_Improvement()
+        self.acx_expander = AcroExpExtractor_Yet_Another_Improvement()
         self.maddog_expander = AcroExpExtractor_MadDog()
 
     def perform_search_query(self, AcronymForSearchQuery, context):
@@ -113,14 +113,20 @@ class _ExpanderSearchEngine(OutExpander):
     def maddog_expansion(self, acronym, text):
         found_expansion = self.maddog_expander.get_best_expansion(acronym, text)
         return found_expansion
+    
+    def acx_expansion(self, acronym, text):
+        found_expansion = self.acx_expander.get_best_expansion(acronym, text)
+        return found_expansion
 
     def process_article(self, out_expander_input: OutExpanderArticleInput):
         predicted_expansions = []
         article_id =  out_expander_input.article.article_id
         article_text = out_expander_input.article.get_raw_text()
         
+        predicted_expansions = []
         for acronym in out_expander_input.acronyms_list:
-            predicted_expansions = []
+            # if len(out_expander_input.acronyms_list) > 1:
+                # pdb.set_trace()
             ## reopen file because intermediate change has potentially occured
             with open(cache_snippet_filepath) as filepath:
                 search_results_jsonfile = json.load(filepath)
@@ -153,7 +159,11 @@ class _ExpanderSearchEngine(OutExpander):
                 found_expansion = self.sh_expansion(acronym, concetenated_search_results)
             elif self.expander == 'maddog':
                 found_expansion = self.maddog_expansion(acronym, concetenated_search_results)
+            elif self.expander == 'acx':
+                found_expansion = self.acx_expansion(acronym, concetenated_search_results)
+
             predicted_expansions.append((found_expansion, 1))
+        # pdb.set_trace()
         print(predicted_expansions)
         # pdb.set_trace()
         return predicted_expansions
