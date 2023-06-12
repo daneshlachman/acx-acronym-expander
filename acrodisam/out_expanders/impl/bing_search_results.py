@@ -3,7 +3,6 @@ import pdb
 from inputters import TrainOutDataManager
 from text_preparation import *
 from .._base import OutExpanderFactory, OutExpanderArticleInput, OutExpander
-# kw_extracter = yake.KeywordExtracter()
 import statistics
 from statistics import mode
 import json
@@ -24,13 +23,24 @@ from AcroExpExtractors.AcroExpExtractor_MadDog import (
     AcroExpExtractor_MadDog,)
 
 
-cache_snippet_filepath = 'acrodisam/out_expanders/impl/SDU_search_results.json'
+cache_snippet_filepath = 'acrodisam/out_expanders/impl/search_results_cache/CSWiki_search_results.json'
 
 class FactorySearchEngine(OutExpanderFactory):
     def __init__(self, *args, **kwargs):
         self.type_in_expander = args
-        pass
 
+    def get_expander(
+        self, train_data_manager: TrainOutDataManager, execution_time_observer=None
+    ):
+
+        return _ExpanderSearchEngine(self.type_in_expander)
+
+class _ExpanderSearchEngine(OutExpander):
+    def __init__(self, in_expander):
+        self.expander =  in_expander[0]
+        self.sh_expander =  AcroExpExtractor_Schwartz_Hearst()
+        self.acx_expander = AcroExpExtractor_Yet_Another_Improvement()
+        self.maddog_expander = AcroExpExtractor_MadDog()
 
     def surrounding_5_words_as_context(acronym, text):
         splitted_text = text.split()
@@ -40,7 +50,6 @@ class FactorySearchEngine(OutExpanderFactory):
             if word == acronym or word < 3:
                 context.remove(word)
         return context
-
 
     def rake_as_context(acronym, text):
         rake_nltk_var = Rake()
@@ -53,22 +62,7 @@ class FactorySearchEngine(OutExpanderFactory):
     def spacy_as_context(acronym, text):
         nlp = spacy.load('en_core_web_sm')
         doc = nlp.text()
-        print(doc.ents)
-
-    def get_expander(
-        self, train_data_manager: TrainOutDataManager, execution_time_observer=None
-    ):
-
-            # pdb.set_trace()
-        return _ExpanderSearchEngine(self.type_in_expander)
-
-
-class _ExpanderSearchEngine(OutExpander):
-    def __init__(self, in_expander):
-        self.expander =  in_expander[0]
-        self.sh_expander =  AcroExpExtractor_Schwartz_Hearst()
-        self.acx_expander = AcroExpExtractor_Yet_Another_Improvement()
-        self.maddog_expander = AcroExpExtractor_MadDog()
+        return doc.ents
 
     def perform_search_query(self, AcronymForSearchQuery, context):
         subscription_key = "078e74d227da41d4ada52622eb655b9a"
@@ -76,11 +70,10 @@ class _ExpanderSearchEngine(OutExpander):
 
         # Construct a request
         query = 'What does the abbreviation ' + AcronymForSearchQuery + ' mean in the context of ' + context + '?'
-        print(query)
-        # pdb.set_trace()
         mkt = 'en-US'
         params = {'q': query, 'mkt': mkt}
         headers = {'Ocp-Apim-Subscription-Key': subscription_key}
+        print(query)
 
         # Call the API
         try:
@@ -96,7 +89,6 @@ class _ExpanderSearchEngine(OutExpander):
             return list_of_snippets
         except Exception as ex:
             raise ex
-
 
     def yake_as_context(self, acronym, text):
         kw_extracter = yake.KeywordExtractor(n=2)
@@ -125,12 +117,11 @@ class _ExpanderSearchEngine(OutExpander):
         
         predicted_expansions = []
         for acronym in out_expander_input.acronyms_list:
-            # if len(out_expander_input.acronyms_list) > 1:
-                # pdb.set_trace()
             ## reopen file because intermediate change has potentially occured
             with open(cache_snippet_filepath) as filepath:
                 search_results_jsonfile = json.load(filepath)
 
+            ## if article not in jsonfile, add the articleid with the acronym and its obtained search results
             if article_id not in list(search_results_jsonfile.keys()):
                 context = self.yake_as_context(acronym, article_text)
                 bing_search_results =  self.perform_search_query(acronym, context)
@@ -139,6 +130,8 @@ class _ExpanderSearchEngine(OutExpander):
                 with open(cache_snippet_filepath,  'w') as f:
                     f.write(json.dumps(search_results_jsonfile, sort_keys=True, indent=4, separators=(',',  ': ')))
 
+            ## if article in jsonfile, add the acronym and its obtained search results within the already existing artielid 
+            ### meaning; if an article contains more than 1 acronym, this code is executed
             elif article_id in list(search_results_jsonfile.keys()):
                 if acronym not in list(search_results_jsonfile[article_id].keys()):
                     context = self.yake_as_context(acronym, article_text)
@@ -154,7 +147,7 @@ class _ExpanderSearchEngine(OutExpander):
                 # search_result =  search_result.translate(str.maketrans('', '', string.punctuation))
                 concetenated_search_results += search_result
 
-            # pdb.set_trace()
+            # select in-expander to use
             if self.expander == 'sh':
                 found_expansion = self.sh_expansion(acronym, concetenated_search_results)
             elif self.expander == 'maddog':
@@ -163,7 +156,5 @@ class _ExpanderSearchEngine(OutExpander):
                 found_expansion = self.acx_expansion(acronym, concetenated_search_results)
 
             predicted_expansions.append((found_expansion, 1))
-        # pdb.set_trace()
         print(predicted_expansions)
-        # pdb.set_trace()
         return predicted_expansions
