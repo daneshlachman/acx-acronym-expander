@@ -89,7 +89,7 @@ class _ExpanderSearchEngine(OutExpander):
                 return keyword[0]
 
     def perform_search_query(self, AcronymForSearchQuery, context):
-        subscription_key = "078e74d227da41d4ada52622eb655b9a"
+        subscription_key = "insert subscription query here"
         endpoint = "https://api.bing.microsoft.com/v7.0/search" 
 
         # Construct a request
