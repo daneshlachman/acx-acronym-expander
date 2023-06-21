@@ -34,8 +34,9 @@ class FactorySearchEngine(OutExpanderFactory):
     def get_expander(
         self, train_data_manager: TrainOutDataManager, execution_time_observer=None
     ):
-
         try:
+            if train_data_manager.dataset_name == 'Test=UsersWikipedia:TrainOut=FullWikipedia:TrainIn=Ab3P-BioC':
+                search_results_filepath = 'acrodisam/out_expanders/impl/search_results_cache/end_to_end_search_results.json'
             if train_data_manager.dataset_name == 'MSHCorpus':
                 search_results_filepath = 'acrodisam/out_expanders/impl/search_results_cache/MSH_search_results.json'
             if train_data_manager.dataset_name == 'CSWikipedia_res-dup':
@@ -47,12 +48,12 @@ class FactorySearchEngine(OutExpanderFactory):
         except Exception:
             print("No cached search results found for dataset name: " + search_results_filepath)
 
-        return _ExpanderSearchEngine(self.type_in_expander, self.type_experiment, search_results_filepath, )
+        return _ExpanderSearchEngine(self.in_expander , self.type_experiment, search_results_filepath )
 
 class _ExpanderSearchEngine(OutExpander):
-    def __init__(self, in_expander, search_results_filepath ):
-        self.expander =  in_expander[0]
-        self.type_experiment =  in_expander[1]
+    def __init__(self, in_expander, type_experiment, search_results_filepath ):
+        self.expander =  in_expander
+        self.type_experiment =  type_experiment
         self.sh_expander =  AcroExpExtractor_Schwartz_Hearst()
         self.acx_expander = AcroExpExtractor_Yet_Another_Improvement()
         self.maddog_expander = AcroExpExtractor_MadDog()
@@ -89,14 +90,15 @@ class _ExpanderSearchEngine(OutExpander):
                 return keyword[0]
 
     def perform_search_query(self, AcronymForSearchQuery, context):
-        subscription_key = "insert subscription query here"
+        # subscription_key = "078e74d227da41d4ada52622eb655b9a"
+        key2 = 'ed6a6c3e8bf6491b8fc08d98667b212a'
         endpoint = "https://api.bing.microsoft.com/v7.0/search" 
 
         # Construct a request
         query = 'What does the abbreviation ' + AcronymForSearchQuery + ' mean in the context of ' + context + '?'
         mkt = 'en-US'
         params = {'q': query, 'mkt': mkt}
-        headers = {'Ocp-Apim-Subscription-Key': subscription_key}
+        headers = {'Ocp-Apim-Subscription-Key': key2}
         print(query)
 
         # Call the Bing api
@@ -130,6 +132,7 @@ class _ExpanderSearchEngine(OutExpander):
         predicted_expansions = []
         article_id =  out_expander_input.article.article_id
         article_text = out_expander_input.article.get_raw_text()
+        # pdb.set_trace()
         
         # loop through every acronym in the given article
         for acronym in out_expander_input.acronyms_list:
@@ -158,7 +161,12 @@ class _ExpanderSearchEngine(OutExpander):
                         f.write(json.dumps(search_results_jsonfile, sort_keys=True, indent=4, separators=(',',  ': ')))
 
             # select if expansion is done per search result, or per all search results concatenated
-            if self.type_experiment == 'concatenated results':
+                concetenated_search_results = ''
+                for search_result in search_results_jsonfile[article_id][acronym]:
+                    # search_result =  search_result.translate(str.maketrans('', '', string.punctuation))
+                    concetenated_search_results += search_result
+
+            if self.type_experiment == 'concatenated_results':
                 if self.expander == 'sh':
                     found_expansion = self.sh_expansion(acronym, concetenated_search_results)
                 elif self.expander == 'maddog':
@@ -167,12 +175,6 @@ class _ExpanderSearchEngine(OutExpander):
                     found_expansion = self.acx_expansion(acronym, concetenated_search_results)
 
             elif self.type_experiment == 'per_search_result':
-                # if article and acronym cached, perform in-expansion on the stored search results
-                concetenated_search_results = ''
-                for search_result in search_results_jsonfile[article_id][acronym]:
-                    # search_result =  search_result.translate(str.maketrans('', '', string.punctuation))
-                    concetenated_search_results += search_result
-
                 # CODE FOR EXPANSION PER SEARCH RESULTS
                 list_of_expansions = []
                 for search_result in search_results_jsonfile[article_id][acronym]:
@@ -186,8 +188,10 @@ class _ExpanderSearchEngine(OutExpander):
                         list_of_expansions.append(best_acronym_per_search_result)
                 occurance_count = Counter(list_of_expansions)
     
+                # get the first expansion or the most occuring one
                 if len(list_of_expansions) > 0:
-                    found_expansion = occurance_count.most_common(1)[0][0]
+                    found_expansion = list_of_expansions[0]
+                    # found_expansion = occurance_count.most_common(1)[0][0]
                 else:
                     found_expansion = ''
 
