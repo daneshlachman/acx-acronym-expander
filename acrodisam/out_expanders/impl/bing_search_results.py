@@ -58,6 +58,11 @@ class _ExpanderSearchEngine(OutExpander):
         self.acx_expander = AcroExpExtractor_Yet_Another_Improvement()
         self.maddog_expander = AcroExpExtractor_MadDog()
         self.search_results_filepath = search_results_filepath
+        self.article_counter = 0
+        self.words_counter = 0
+        self.acronym_counter = 0
+        self.total_number_ambig_acronyms = 0
+        self.chars_counter = 0
 
     def surrounding_5_words_as_context(self, acronym, text):
         splitted_text = text.split()
@@ -117,6 +122,7 @@ class _ExpanderSearchEngine(OutExpander):
             raise ex
             
     def sh_expansion(self, acronym, text):
+        pdb.set_trace()
         found_expansion = self.sh_expander.get_best_expansion(acronym, text)
         return found_expansion
     
@@ -132,10 +138,26 @@ class _ExpanderSearchEngine(OutExpander):
         predicted_expansions = []
         article_id =  out_expander_input.article.article_id
         article_text = out_expander_input.article.get_raw_text()
-        # pdb.set_trace()
-        
+
+
+        #DATA EXPLORATION CODE
+        #AVG WORDS & CHARS PER ARTICLE
+        # splittedtext = article_text.split()
+        # self.words_counter += len(splittedtext)
+        # self.chars_counter += len(article_text)
+        # self.article_counter +=1
+        # print('avg words per article: ' + str(self.words_counter / self.article_counter))
+        # print('avg chars per article: ' + str(self.chars_counter / self.article_counter))
+
         # loop through every acronym in the given article
         for acronym in out_expander_input.acronyms_list:
+            # code for data exploration
+            # number_distinct_exp_per_ambig_acronym = len(out_expander_input.distinct_expansions_list[0])
+            # pdb.set_trace()
+            # self.acronym_counter += 1
+            # self.total_number_ambig_acronyms += number_distinct_exp_per_ambig_acronym
+            
+            # print('avg # distinct expansions per ambig acronym: ' + int())
             ## reopen file because intermediate change has potentially occured
             with open(self.search_results_filepath) as filepath:
                 search_results_jsonfile = json.load(filepath)
@@ -190,8 +212,8 @@ class _ExpanderSearchEngine(OutExpander):
     
                 # get the first expansion or the most occuring one
                 if len(list_of_expansions) > 0:
-                    found_expansion = list_of_expansions[0]
-                    # found_expansion = occurance_count.most_common(1)[0][0]
+                    # found_expansion = list_of_expansions[0]
+                    found_expansion = occurance_count.most_common(1)[0][0]
                 else:
                     found_expansion = ''
 
