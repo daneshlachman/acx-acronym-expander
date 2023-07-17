@@ -23,6 +23,14 @@ The main command to run the out-expander is the following:
 ```sh
 python3 acrodisam/benchmarkers/out_expansion/<choose benchmark file> --out-expander bing_search_result --out_expander_args <choose in-expander>,<choose search results approach>
 ```
+
+For the end-to-end benchmark, we use a different command as it also requires an in-expander:
+
+```sh
+python3 acrodisam/benchmarkers/end_to_end/out_expansion/benchmark_user_wikipedia.py --in_expander <choose in-expander> --out-expander bing_search_result --out_expander_args <choose in-expander>,<choose search results approach>
+```
+
+
 # Usage Examples
 **Below some usage examples are given where every time the dataset, in-expander and search results approach differs.**
 
@@ -37,8 +45,11 @@ The command for the CSWiki dataset with the MadDog in-expander and the most freq
 ```sh
 python3 acrodisam/benchmarkers/out_expansion/benchmark_cs_wikipedia.py --out-expander bing_search_result --out_expander_args maddog,most_frequent
 ```
-The command for the ScienceWISE dataset with the AcX in-expander and the concatenated results approach is the following:
+
+The command for the end-to-end dataset with the concatenated results approach and the Schwartz & Hearst in-expander for both the end-to-end benchmark and our out-expander:
 
 ```sh
-python3 acrodisam/benchmarkers/out_expansion/benchmark_science_wise.py --out-expander bing_search_result --out_expander_args acx,concatenated_results
+python3 acrodisam/benchmarkers/end_to_end/out_expansion/benchmark_user_wikipedia.py --in_expander schwartz_hearst --out-expander bing_search_result --out_expander_args sh,concatenated_results
 ```
+
+
