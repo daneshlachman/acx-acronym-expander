@@ -122,7 +122,6 @@ class _ExpanderSearchEngine(OutExpander):
             raise ex
             
     def sh_expansion(self, acronym, text):
-        pdb.set_trace()
         found_expansion = self.sh_expander.get_best_expansion(acronym, text)
         return found_expansion
     
@@ -182,12 +181,13 @@ class _ExpanderSearchEngine(OutExpander):
                     with open(self.search_results_filepath,  'w') as f:
                         f.write(json.dumps(search_results_jsonfile, sort_keys=True, indent=4, separators=(',',  ': ')))
 
-            # select if expansion is done per search result, or per all search results concatenated
+            
                 concetenated_search_results = ''
                 for search_result in search_results_jsonfile[article_id][acronym]:
                     # search_result =  search_result.translate(str.maketrans('', '', string.punctuation))
                     concetenated_search_results += search_result
 
+            # select if choses expansion is per concatenated results, per most frequent or ranking based. 
             if self.type_experiment == 'concatenated_results':
                 if self.expander == 'sh':
                     found_expansion = self.sh_expansion(acronym, concetenated_search_results)
@@ -196,8 +196,8 @@ class _ExpanderSearchEngine(OutExpander):
                 elif self.expander == 'acx':
                     found_expansion = self.acx_expansion(acronym, concetenated_search_results)
 
-            elif self.type_experiment == 'per_search_result':
-                # CODE FOR EXPANSION PER SEARCH RESULTS
+            elif self.type_experiment == 'most_frequent':
+                # CODE FOR EXPANSION PER MOST FREQUENT
                 list_of_expansions = []
                 for search_result in search_results_jsonfile[article_id][acronym]:
                     if self.expander == 'sh':
@@ -210,14 +210,31 @@ class _ExpanderSearchEngine(OutExpander):
                         list_of_expansions.append(best_acronym_per_search_result)
                 occurance_count = Counter(list_of_expansions)
     
-                # get the first expansion or the most occuring one
+                # get the most frequent expansion
                 if len(list_of_expansions) > 0:
-                    # found_expansion = list_of_expansions[0]
                     found_expansion = occurance_count.most_common(1)[0][0]
                 else:
                     found_expansion = ''
 
-
+            elif self.type_experiment == 'ranking_based':
+                # CODE FOR EXPANSION RANKING BASED
+                list_of_expansions = []
+                for search_result in search_results_jsonfile[article_id][acronym]:
+                    if self.expander == 'sh':
+                        best_acronym_per_search_result = self.sh_expansion(acronym, search_result)
+                    elif self.expander == 'maddog':
+                        best_acronym_per_search_result = self.maddog_expansion(acronym, search_result)
+                    elif self.expander == 'acx':
+                        best_acronym_per_search_result = self.acx_expansion(acronym, search_result)
+                    if best_acronym_per_search_result != '':
+                        list_of_expansions.append(best_acronym_per_search_result)
+                occurance_count = Counter(list_of_expansions)
+    
+                # get the first found expansion based on the search engine ranking
+                if len(list_of_expansions) > 0:
+                    found_expansion = list_of_expansions[0]
+                else:
+                    found_expansion = ''
 
             predicted_expansions.append((found_expansion, 1))
         print(predicted_expansions)
