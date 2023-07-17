@@ -2,7 +2,7 @@
 MSc thesis on "Using a Web Search Engine for Automatic Acronym Disambiguation"
 
 
-This project contains the implementation of my search engine approach to acronym disambiguation as an out-expansion module within the [AcX system](https://github.com/JoaoLMPereira/acx-acronym-expander) which I built for my master thesis. My thesis report can be found [here](https://doi.org/10.13140/RG.2.2.28321.58728).
+This project contains the implementation of my search engine approach to acronym disambiguation as an out-expansion module within the [AcX system](https://github.com/JoaoLMPereira/acx-acronym-expander). My thesis report can be found [here](https://doi.org/10.13140/RG.2.2.28321.58728).
 
 # Abstract
 > With the development of scientific fields over time, an uncountable amount of new acronyms emerged, especially within the medical and technical fields. 
